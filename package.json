@@ -1,0 +1,25 @@
+{
+  "name": "howto",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GitHubJiKe/howto.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GitHubJiKe/howto/issues"
+  },
+  "homepage": "https://github.com/GitHubJiKe/howto#readme",
+  "dependencies": {
+    "@types/fs-extra": "^9.0.13",
+    "fs-extra": "^10.1.0",
+    "showdown": "^2.1.0"
+  }
+}
