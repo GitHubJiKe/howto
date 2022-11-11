@@ -8,7 +8,7 @@ const minify = require("html-minifier").minify;
 const execSync = require("child_process").execSync;
 const EventEmitter = require("events").EventEmitter;
 const dayjs = require("dayjs");
-const config = require("../config.json");
+const config = require("../config.js");
 const convert = new showdown.Converter();
 const readFileAsync = Util.promisify(fs.readFile);
 
