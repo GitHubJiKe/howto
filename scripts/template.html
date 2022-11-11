@@ -7,13 +7,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://highlightjs.org/static/demo/styles/agate.css">
   <script src="https://highlightjs.org/static/highlight.min.js"></script>
+  <style>
+    html,
+    body {
+      background-color: aliceblue;
+    }
+
+    main {
+      width: 60vw;
+      min-height: 80vh;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      flex-direction: column;
+    }
+
+    h1::after {
+      font-size: 12px;
+      color: #bbb;
+      content: attr(data-time);
+      display: block;
+      margin-top: 8px;
+      font-weight: normal;
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px;
+    }
+  </style>
   <title>
     <%= title %>
   </title>
 </head>
 
 <body>
-  {content}
+  <header>
+    <h1 style="padding:0 10vw;">
+      <a href="/"><%= name %></a>
+    </h1>
+  </header>
+  <main>
+    <section>
+      {content}
+    </section>
+    <footer>
+      <div>
+        <% if (prev) { %>
+        <a href="<%= prev %>">上一篇</a>
+        <% } %>
+      </div>
+      <div>
+        <% if (next) { %>
+        <a href="<%= next %>">下一篇</a>
+        <% } %>
+      </div>
+    </footer>
+  </main>
   <script>
     if (hljs) {
       hljs.highlightAll();

@@ -8,11 +8,25 @@
   <style>
     html {
       width: 100vw;
+      background-color: aliceblue;
     }
 
     section {
       margin: 0 auto;
       max-width: 40vw;
+    }
+
+    summary>* {
+      display: inline;
+    }
+
+    summary {
+      margin-bottom: 12px;
+      cursor: pointer;
+    }
+
+    details {
+      margin: 12px 0;
     }
   </style>
   <title>
@@ -22,8 +36,8 @@
 
 <body>
   <header>
-    <h1 style="display: flex;justify-content:space-between;align-items:center;">
-      <%= title %>
+    <h1 style="display: flex;justify-content:space-between;align-items:center;padding:0 10vw;">
+      <a href="/"><%= title %></a>
       <a href=" <%= github %>">
         github
       </a>
@@ -35,9 +49,13 @@
       <summary>
         <h4><%- key %></h4>
       </summary>
-      <% content[key].forEach(function(name){ %>
-      <a target="_blank" href="/<%- key %>/<%- name %>"><%- name.replace('.html','') %></a>
-      <% }); %>
+      <ul>
+        <% content[key].forEach(function(name){ %>
+        <li>
+          <a target="_blank" href="/<%- key %>/<%- name %>"><%- name.replace('.html','') %></a>
+        </li>
+        <% }); %>
+      </ul>
     </details>
     <% }); %>
   </section>
