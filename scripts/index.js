@@ -2,6 +2,7 @@ const showdown = require("showdown")
 const fs = require("fs-extra")
 const Path = require("path")
 const Util = require("util")
+const ejs = require("ejs")
 const execSync = require("child_process").execSync
 const config = require("../config.json")
 const convert = new showdown.Converter()
@@ -15,6 +16,8 @@ const isDir = path => fs.statSync(path).isDirectory()
 async function doConvert() {
     const entry = resolvePath(config.entry)
     const output = resolvePath(config.output)
+    const templatePath = resolvePath(Path.resolve(__dirname, './template.html'))
+    const templateHtml = (await readFileAsync(templatePath)).toString()
     if (!fs.existsSync(output)) {
         fs.ensureDirSync(output)
     } else {
@@ -32,7 +35,7 @@ async function doConvert() {
                 if (!fs.existsSync(articlePath.dir)) {
                     fs.ensureDirSync(articlePath.dir)
                 }
-                await fs.writeFile(Path.format(articlePath), htmlTxt)
+                await fs.writeFile(Path.format(articlePath), templateHtml.replace("{content}", htmlTxt).replace("{title}", config.name))
             } else {
                 read2Cov(tempPath)
             }
