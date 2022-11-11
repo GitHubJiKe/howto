@@ -2,7 +2,6 @@ const showdown = require("showdown")
 const fs = require("fs-extra")
 const Path = require("path")
 const Util = require("util")
-const ejs = require("ejs")
 const execSync = require("child_process").execSync
 const config = require("../config.json")
 const convert = new showdown.Converter()
