@@ -2,5 +2,6 @@
     "entry": "articles",
     "output": "blog",
     "author": "Peter Yuan",
-    "name": "howto"
+    "name": "How To",
+    "github": "https://github.com/GitHubJiKe/howto"
 }

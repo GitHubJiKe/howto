@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html {
+      width: 100vw;
+    }
+
+    section {
+      margin: 0 auto;
+      max-width: 40vw;
+    }
+  </style>
+  <title>
+    <%= title %>
+  </title>
+</head>
+
+<body>
+  <header>
+    <h1 style="display: flex;justify-content:space-between;align-items:center;">
+      <%= title %>
+      <a href=" <%= github %>">
+        github
+      </a>
+    </h1>
+  </header>
+  <section>
+    <% Object.keys(content).forEach(function(key){ %>
+    <details open>
+      <summary>
+        <h4><%- key %></h4>
+      </summary>
+      <% content[key].forEach(function(name){ %>
+      <a target="_blank" href="/<%- key %>/<%- name %>"><%- name.replace('.html','') %></a>
+      <% }); %>
+    </details>
+    <% }); %>
+  </section>
+</body>
+
+</html>
