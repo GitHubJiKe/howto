@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "node ./scripts/index.js",
-    "preview": "export NODE_ENV=preview && node ./scripts/index.js"
+    "preview": "export NODE_ENV=preview && node ./scripts/index.js",
+    "publish": "cd blog && npx vercel deploy --prod"
   },
   "repository": {
     "type": "git",
@@ -31,6 +32,7 @@
     "tabWidth": 2
   },
   "devDependencies": {
-    "@types/showdown": "^2.0.0"
+    "@types/showdown": "^2.0.0",
+    "vercel": "^28.4.17"
   }
 }

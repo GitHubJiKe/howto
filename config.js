@@ -2,8 +2,18 @@ module.exports = {
   entry: "articles",
   output: "blog",
   author: "Peter Yuan",
+  css: "default.css",
   name: "How To",
-  github: "https://github.com/GitHubJiKe/howto",
+  socialMedias: [
+    {
+      key: "知乎",
+      value: "https://www.zhihu.com/people/ji-ke-yuan",
+    },
+    {
+      key: "github",
+      value: "https://github.com/GitHubJiKe/howto",
+    },
+  ],
   datetime: {
     use: true,
     format: "YYYY/MM/DD HH:mm:ss",

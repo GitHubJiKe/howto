@@ -8,25 +8,14 @@
       rel="stylesheet"
       href="https://highlightjs.org/static/demo/styles/agate.css"
     />
+    <link rel="stylesheet" href="<%= stylesheet %>" />
+    <link rel="icon" type="image/png" href="/assets/favicon.ico" />
     <script src="https://highlightjs.org/static/highlight.min.js"></script>
+    <title><%= title %></title>
     <style>
-      html,
-      body {
-        background-color: aliceblue;
-      }
-
-      main {
-        width: 60vw;
-        min-height: 80vh;
-        margin: 0 auto;
-        display: flex;
-        justify-content: space-between;
-        flex-direction: column;
-      }
-
       h1::after {
-        font-size: 12px;
-        color: #bbb;
+        font-size: 0.4em;
+        color: #395260;
         content: attr(data-time);
         display: block;
         margin-top: 8px;
@@ -38,14 +27,20 @@
         justify-content: space-between;
         padding: 12px;
       }
+      .site-link-h {
+        text-align: left;
+        margin-bottom: 0;
+        font-size: 2em;
+        padding-left: 12px;
+        padding-top: 12px;
+      }
     </style>
-    <title><%= title %></title>
   </head>
 
   <body>
-    <header>
-      <h1 style="padding: 0 10vw">
-        <a href="/"><%= name %></a>
+    <header style="margin: 0; width: 100%">
+      <h1 class="site-link-h">
+        <a href="/" style="color: #c91f37"> <%= name %> </a>
       </h1>
     </header>
     <main>

@@ -36,21 +36,31 @@ const output = resolvePath(config.output);
 const count = getAllArticleCount(entry);
 const templatePath = resolvePath(Path.resolve(__dirname, "./template.html"));
 const event = new EventEmitter();
+const stylesheet = Path.resolve(
+  output,
+  "/assets/styles",
+  config.css || "default.css"
+);
+
+const isPreview = () => {
+  return process.env.NODE_ENV && process.env.NODE_ENV === "preview";
+};
 
 async function genHomePage() {
   const res = await ejs.renderFile(Path.resolve(__dirname, "./index.html"), {
     title: config.name,
     content: categoryMap,
-    github: config.github,
+    socialMedias: config.socialMedias,
+    stylesheet,
+    copyright: `Copyright©${dayjs().year()} | PeterYuan`,
   });
   await fs.writeFile(`${output}/index.html`, minify(res, minifyConfig));
+  await fs.copy(Path.resolve(__dirname, "../assets"), `${output}/assets`);
   console.log("转换搞定啦");
-  if (process.env.NODE_ENV && process.env.NODE_ENV === "preview") {
+  if (isPreview()) {
     createServer({ port: config.dev.port });
   }
 }
-
-event.on("done", genHomePage);
 
 async function genHtmlTxt(path) {
   const res = await readFileAsync(path);
@@ -83,7 +93,7 @@ async function genArticleContent(path, opts = {}) {
     title: path.name,
     ...opts,
     name: config.name,
-    github: config.github,
+    stylesheet,
   });
 }
 
@@ -153,9 +163,8 @@ async function convertMDFile(tempPath, opts) {
   await fs.writeFile(Path.format(articlePath), minified);
 }
 
-async function doConvert() {
-  console.log("转换开始啦");
-
+async function startConvert() {
+  console.log("开始转换啦");
   if (!fs.existsSync(output)) {
     fs.ensureDirSync(output);
   } else {
@@ -183,24 +192,31 @@ async function doConvert() {
   await read2Cov(entry);
 }
 
-doConvert();
-
 function createServer({ port = 8080 }) {
   http
     .createServer(async function (request, response) {
-      response.writeHead(200, { "Content-Type": "text/html" });
       if (request.url === "/") {
+        response.writeHead(200, { "Content-Type": "text/html" });
         const res = await readFileAsync(`${output}/index.html`);
         response.end(res.toString());
-      } else {
-        if (request.url.endsWith(".html")) {
-          const res = await readFileAsync(
-            `${output}${decodeURIComponent(request.url)}`
-          );
-          response.end(res.toString());
-        } else {
-          // TODO: handle other case
-        }
+      } else if (request.url.endsWith(".html")) {
+        response.writeHead(200, { "Content-Type": "text/html" });
+        const res = await readFileAsync(
+          `${output}${decodeURIComponent(request.url)}`
+        );
+        response.end(res.toString());
+      } else if (request.url.endsWith(".css")) {
+        response.writeHead(200, { "Content-Type": "text/css" });
+        const res = await readFileAsync(
+          `${output}${decodeURIComponent(request.url)}`
+        );
+        response.end(res.toString());
+      } else if (request.url.endsWith(".png") || request.url.endsWith(".ico")) {
+        response.writeHead(200, { "Content-Type": "image/png" });
+        const res = await readFileAsync(
+          `${output}${decodeURIComponent(request.url)}`
+        );
+        response.end(res, "binary");
       }
     })
     .listen(port);
@@ -208,6 +224,21 @@ function createServer({ port = 8080 }) {
   console.log(`Server running at http://localhost:${port}/`);
 }
 
-fs.watch(entry, { recursive: true }, async (_, tempPath) => {
-  await convertMDFile(Path.resolve(entry, tempPath));
-});
+function watch() {
+  fs.watch(entry, { recursive: true }, async (_, tempPath) => {
+    await convertMDFile(Path.resolve(entry, tempPath));
+  });
+}
+
+event.on("done", genHomePage);
+event.on(
+  "start",
+  isPreview()
+    ? () => {
+        startConvert();
+        watch();
+      }
+    : startConvert
+);
+
+event.emit("start");
