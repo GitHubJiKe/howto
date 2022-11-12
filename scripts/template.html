@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://highlightjs.org/static/demo/styles/agate.css"
+    />
+    <link rel="stylesheet" href="<%= stylesheet %>" />
+    <link rel="icon" type="image/png" href="/assets/favicon.ico" />
+    <script src="https://highlightjs.org/static/highlight.min.js"></script>
+    <title><%= title %></title>
+    <style>
+      h1::after {
+        font-size: 0.4em;
+        color: #395260;
+        content: attr(data-time);
+        display: block;
+        margin-top: 8px;
+        font-weight: normal;
+      }
+
+      footer {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px;
+      }
+      .site-link-h {
+        text-align: left;
+        margin-bottom: 0;
+        font-size: 2em;
+        padding-left: 12px;
+        padding-top: 12px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header style="margin: 0; width: 100%">
+      <h1 class="site-link-h">
+        <a href="/" style="color: #c91f37"> <%= name %> </a>
+      </h1>
+    </header>
+    <main>
+      <section>{content}</section>
+      <footer>
+        <div>
+          <% if (prev) { %>
+          <a href="<%= prev %>">上一篇</a>
+          <% } %>
+        </div>
+        <div>
+          <% if (next) { %>
+          <a href="<%= next %>">下一篇</a>
+          <% } %>
+        </div>
+      </footer>
+    </main>
+    <script>
+      if (hljs) {
+        hljs.highlightAll();
+      }
+    </script>
+  </body>
+</html>
