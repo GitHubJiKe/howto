@@ -11,17 +11,15 @@ const dayjs = require("dayjs");
 const http = require("http");
 const config = require("../config.js");
 const convert = new showdown.Converter(config.showdownConfig);
+
 const readFileAsync = Util.promisify(fs.readFile);
-
-const resolvePath = (path, mid = "../") => Path.resolve(__dirname, mid, path);
-
 const isDir = (path) => fs.statSync(path).isDirectory();
-
 const getAllArticleCount = (path = "./") =>
   Number(execSync(`cd ${path} && ls -lR|grep "^-"|wc -l`).toString());
+const isPreview = () =>
+  process.env.NODE_ENV && process.env.NODE_ENV === "preview";
 
 const categoryMap = {};
-
 const minifyConfig = {
   removeAttributeQuotes: true,
   html5: true,
@@ -31,20 +29,16 @@ const minifyConfig = {
   collapseWhitespace: true,
 };
 
-const entry = resolvePath(config.entry);
-const output = resolvePath(config.output);
+const entry = Path.resolve(__dirname, `../${config.entry}`);
+const output = Path.resolve(__dirname, `../${config.output}`);
 const count = getAllArticleCount(entry);
-const templatePath = resolvePath(Path.resolve(__dirname, "./template.html"));
+const templatePath = Path.resolve(__dirname, "./template.html");
 const event = new EventEmitter();
 const stylesheet = Path.resolve(
   output,
   "/assets/styles",
   config.css || "default.css"
 );
-
-const isPreview = () => {
-  return process.env.NODE_ENV && process.env.NODE_ENV === "preview";
-};
 
 async function genHomePage() {
   const res = await ejs.renderFile(Path.resolve(__dirname, "./index.html"), {
@@ -91,9 +85,9 @@ function setCategoryMap(path) {
 async function genArticleContent(path, opts = {}) {
   return await ejs.renderFile(templatePath, {
     title: path.name,
-    ...opts,
     name: config.name,
     stylesheet,
+    ...opts,
   });
 }
 
@@ -165,6 +159,7 @@ async function convertMDFile(tempPath, opts) {
 
 async function startConvert() {
   console.log("开始转换啦");
+
   if (!fs.existsSync(output)) {
     fs.ensureDirSync(output);
   } else {
@@ -185,42 +180,36 @@ async function startConvert() {
           event.emit("done");
         }
       } else {
-        read2Cov(tempPath);
+        await read2Cov(tempPath);
       }
     }
   }
+
   await read2Cov(entry);
 }
 
 function createServer({ port = 8080 }) {
-  http
-    .createServer(async function (request, response) {
-      if (request.url === "/") {
-        response.writeHead(200, { "Content-Type": "text/html" });
-        const res = await readFileAsync(`${output}/index.html`);
-        response.end(res.toString());
-      } else if (request.url.endsWith(".html")) {
-        response.writeHead(200, { "Content-Type": "text/html" });
-        const res = await readFileAsync(
-          `${output}${decodeURIComponent(request.url)}`
-        );
-        response.end(res.toString());
-      } else if (request.url.endsWith(".css")) {
-        response.writeHead(200, { "Content-Type": "text/css" });
-        const res = await readFileAsync(
-          `${output}${decodeURIComponent(request.url)}`
-        );
-        response.end(res.toString());
-      } else if (request.url.endsWith(".png") || request.url.endsWith(".ico")) {
-        response.writeHead(200, { "Content-Type": "image/png" });
-        const res = await readFileAsync(
-          `${output}${decodeURIComponent(request.url)}`
-        );
-        response.end(res, "binary");
-      }
-    })
-    .listen(port);
+  const routes = async (request, response) => {
+    let url = request.url;
+    let contentType = "text/html";
+    let extra;
+    if (url === "/") {
+      contentType = "text/html";
+      url = "/index.html";
+    } else if (url.endsWith(".html")) {
+      contentType = "text/html";
+    } else if (url.endsWith(".css")) {
+      contentType = "text/css";
+    } else if (url.endsWith(".png") || url.endsWith(".ico")) {
+      contentType = "image/png";
+      extra = "binary";
+    }
+    response.writeHead(200, { "Content-Type": contentType });
 
+    const res = await readFileAsync(`${output}${decodeURIComponent(url)}`);
+    response.end(extra ? res : res.toString(), extra);
+  };
+  http.createServer(routes).listen(port);
   console.log(`Server running at http://localhost:${port}/`);
 }
 
