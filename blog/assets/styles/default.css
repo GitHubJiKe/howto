@@ -114,6 +114,7 @@ code {
   line-height: 1.8em;
   display: inline;
   word-wrap: normal;
+  color: var(--whity-color);
 }
 a {
   color: #4b5cc4;

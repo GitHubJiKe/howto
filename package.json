@@ -6,7 +6,7 @@
   "scripts": {
     "build": "node ./scripts/index.js",
     "preview": "export NODE_ENV=preview && node ./scripts/index.js",
-    "publish": "cd blog && npx vercel deploy --prod"
+    "publish": "npm run build && cd blog && npx vercel deploy --prod"
   },
   "repository": {
     "type": "git",
