@@ -46,7 +46,7 @@ async function genHomePage() {
     content: categoryMap,
     socialMedias: config.socialMedias,
     stylesheet,
-    copyright: `Copyright©${dayjs().year()} | PeterYuan`,
+    copyright: `Copyright©${dayjs().year()} | ${config.author}`,
   });
   await fs.writeFile(`${output}/index.html`, minify(res, minifyConfig));
   await fs.copy(Path.resolve(__dirname, "../assets"), `${output}/assets`);
