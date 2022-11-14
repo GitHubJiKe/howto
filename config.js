@@ -1,6 +1,6 @@
 module.exports = {
   entry: "articles",
-  output: "blog",
+  output: "docs",
   author: "Peter Yuan",
   css: "default.css",
   name: "How To",
