@@ -1,6 +1,8 @@
-# 如何DIY博客系统
+# 如何 DIY 博客系统
 
-> 自己使用NodeJS一步步的构建起一个相对简单但是又可以使用的博客系统
+![头图](https://images.unsplash.com/photo-1499750310107-5fef28a66643?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2370&q=80)
+
+> 自己使用 NodeJS 一步步的构建起一个相对简单但是又可以使用的博客系统
 
 ## 契机
 
@@ -14,15 +16,15 @@
 
 ### 第一步
 
-> 将markdown转化为HTML
+> 将 markdown 转化为 HTML
 
-这里我使用的是[showdown](https://showdownjs.com/)，这是一个非常棒的可以双向转换HTML <-> Markdown的工具库。
+这里我使用的是[showdown](https://showdownjs.com/)，这是一个非常棒的可以双向转换 HTML <-> Markdown 的工具库。
 
 ### 第二步
 
 > 使用模板动态构建页面
 
-这里我使用的模板引擎是[EJS](https://ejs.co/)，使用它可以往HTML模板内传参，将一些动态内容注入到HTML文件内
+这里我使用的模板引擎是[EJS](https://ejs.co/)，使用它可以往 HTML 模板内传参，将一些动态内容注入到 HTML 文件内
 
 ### 第三步
 
@@ -32,15 +34,15 @@
 
 ### 第四步
 
-> 压缩转换后的HTML文件，并将其输出到指定目录
+> 压缩转换后的 HTML 文件，并将其输出到指定目录
 
-使用[html-minifier](https://github.com/kangax/html-minifier)压缩HTML文件，使用`fs.writeFile` api 将文件写入指定目录下
+使用[html-minifier](https://github.com/kangax/html-minifier)压缩 HTML 文件，使用`fs.writeFile` api 将文件写入指定目录下
 
 ### 第五步
 
-> 搭建本地HTTP服务实现预览功能
+> 搭建本地 HTTP 服务实现预览功能
 
-借助Node原生模块 `http` 创建 `server`，编写路由实现静态服务预览效果，使用 `fs.watch` api 实现监听目标文件夹下的文件变更，进行更新HTML操作
+借助 Node 原生模块 `http` 创建 `server`，编写路由实现静态服务预览效果，使用 `fs.watch` api 实现监听目标文件夹下的文件变更，进行更新 HTML 操作
 
 ### 第六步
 
@@ -56,7 +58,7 @@ module.exports = {
   socialMedias: [], // 社交媒体账号链接展示
   datetime: { // 创建时间&更新时间戳展示配置和格式化
     use: true,
-    format: "YYYY/MM/DD HH:mm:ss", 
+    format: "YYYY/MM/DD HH:mm:ss",
   },
   dev: { // 本地服务配置
     port: 8080,
@@ -75,23 +77,22 @@ module.exports = {
 这个过程中还使用了不少其他的方案，比如：
 
 - [dayjs](https://day.js.org/)格式化时间
-- 原生Node模块`child_process`执行shell命令，获取目标文件夹下的文件总数
-- 原生Node模块`events`的EventEmitter来实现事件监听
-- 通过知乎问题[有哪些Markdown的CSS样式表推荐？](https://www.zhihu.com/question/60135717)找到的自己喜欢的Markdown样式，总之找一个自己喜欢的下载下来css文件就可以用了
+- 原生 Node 模块`child_process`执行 shell 命令，获取目标文件夹下的文件总数
+- 原生 Node 模块`events`的 EventEmitter 来实现事件监听
+- 通过知乎问题[有哪些 Markdown 的 CSS 样式表推荐？](https://www.zhihu.com/question/60135717)找到的自己喜欢的 Markdown 样式，总之找一个自己喜欢的下载下来 css 文件就可以用了
 - 我使用的颜色和背景图来自于[中国传统颜色网站](https://colors.ichuantong.cn/)，感兴趣的可以去逛逛
 - 代码高亮使用的是[highlightjs](https://highlightjs.org/)，有很多的主题配色供你选择，我使用的是
-    
-    ```html
-     <link
-      rel="stylesheet"
-      href="https://highlightjs.org/static/demo/styles/agate.css"
-    />
-    ```
+  ```html
+  <link
+    rel="stylesheet"
+    href="https://highlightjs.org/static/demo/styles/agate.css"
+  />
+  ```
 
 ## 最后
 
-> 感兴趣的可以clone代码，自己改造着玩 https://github.com/GitHubJiKe/howto
+> 感兴趣的可以 clone 代码，自己改造着玩 https://github.com/GitHubJiKe/howto
 
-最后就是，代码组织的不够好，也没有做什么抽象，就是最简单的最快的拿原生JS撸了一下，大概用了两天的业余时间还有部分周末时间，所以后期又时间的话可能会重构一下，看能不能做的更好一点。
+最后就是，代码组织的不够好，也没有做什么抽象，就是最简单的最快的拿原生 JS 撸了一下，大概用了两天的业余时间还有部分周末时间，所以后期又时间的话可能会重构一下，看能不能做的更好一点。
 
 对了我部署站点用的是免费的[Vercel](https://vercel.com/)
