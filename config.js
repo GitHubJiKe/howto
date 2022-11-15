@@ -19,7 +19,7 @@ module.exports = {
     format: "YYYY/MM/DD HH:mm:ss",
   },
   dev: {
-    port: 8080,
+    port: 3000,
   },
   showdownConfig: {
     strikethrough: true,

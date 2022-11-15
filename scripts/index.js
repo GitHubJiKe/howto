@@ -41,12 +41,14 @@ const stylesheet = Path.resolve(
 );
 
 async function genHomePage() {
+  const { name: title, socialMedias, author } = config;
   const res = await ejs.renderFile(Path.resolve(__dirname, "./index.html"), {
-    title: config.name,
+    title,
     content: categoryMap,
-    socialMedias: config.socialMedias,
+    socialMedias,
     stylesheet,
-    copyright: `Copyright©${dayjs().year()} | ${config.author}`,
+    copyright: `Copyright©${dayjs().year()} | ${author}`,
+    author,
   });
   await fs.writeFile(`${output}/index.html`, minify(res, minifyConfig));
   await fs.copy(Path.resolve(__dirname, "../assets"), `${output}/assets`);

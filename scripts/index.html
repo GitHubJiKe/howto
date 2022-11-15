@@ -36,6 +36,14 @@
         align-items: center;
         flex-direction: column;
       }
+      .left> .author{
+        font-size: 0.8em;
+        color: #395260;
+        display: block;
+        margin-top: 8px;
+        font-weight: normal;
+        margin-top: 12px;
+      }
       main > .right {
         flex: 7;
         overflow: auto;
@@ -73,6 +81,9 @@
           width="200"
           height="200"
         />
+        <span class="author">
+          <%= author %>
+        </span>
         <div style="margin-top: 24px">
           <% socialMedias.forEach(function(v,idx){ %> <% if (idx > 0) { %> | <%
           } %>
