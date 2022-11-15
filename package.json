@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@types/showdown": "^2.0.0",
+    "prettier": "^2.7.1",
     "vercel": "^28.4.17"
   }
 }
