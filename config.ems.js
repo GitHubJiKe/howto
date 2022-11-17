@@ -1,14 +1,9 @@
-const Path = require("path");
-module.exports = {
-  entry: Path.resolve(__dirname, "articles"),
-  output: Path.resolve(__dirname, "docs"),
+const config = {
+  entry: "articles",
+  output: "docs",
   author: "Peter Yuan",
   css: "default.css",
   name: "How To",
-  templates: {
-    homepage: Path.resolve(__dirname, "./templates/index.html"),
-    layout: Path.resolve(__dirname, "./templates/layout.handlebars"),
-  },
   socialMedias: [
     {
       key: "知乎",
@@ -45,6 +40,7 @@ module.exports = {
     encodeEmails: true,
     emoji: true,
     backslashEscapesHTMLTags: true,
-    metadata: true,
   },
 };
+
+export default config;

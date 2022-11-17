@@ -1,3 +1,11 @@
+---
+title: AAA
+createDate: 2022/11/17 12:00
+topic: 习惯11111
+next: /NodeJS/如何DIY博客系统
+prev: /思考/如何养成一个习惯
+---
+
 # 如何 DIY 博客系统
 
 ![头图](https://images.unsplash.com/photo-1499750310107-5fef28a66643?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2370&q=80)
@@ -18,7 +26,7 @@
 
 > 将 markdown 转化为 HTML
 
-这里我使用的是[showdown](https://showdownjs.com/)，这是一个非常棒的可以双向转换 HTML <-> Markdown 的工具库。
+这里我使用的是[showdown](https://showdownjs.com/)，这是一个非常棒的可以双向转换 HTML ↔ Markdown 的工具库。
 
 ### 第二步
 
