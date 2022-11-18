@@ -14,7 +14,6 @@ const showdown_1 = __importDefault(require("showdown"));
 const html_minifier_terser_1 = require("html-minifier-terser");
 const handlebars_1 = __importDefault(require("handlebars"));
 const fs_extra_1 = require("fs-extra");
-const dayjs_1 = __importDefault(require("dayjs"));
 const execPromise = (0, node_util_1.promisify)(node_child_process_1.exec);
 const minifyConfig = {
     removeAttributeQuotes: true,
@@ -35,28 +34,26 @@ const minifyConfig = {
     collapseWhitespace: true,
     collapseBooleanAttributes: true,
     decodeEntities: true,
-    processScripts: ['text/html'],
+    processScripts: ["text/html"],
 };
 class BlogEngine {
     config = {};
     #converter = null;
     #articlePaths = [];
-    #articleCount = 0;
-    #count = 0;
     assets = [];
     plugins = [];
     hooks = {
-        beforeEmit: new tapable_1.AsyncSeriesHook(['cxt']),
-        afterEmit: new tapable_1.AsyncSeriesHook(['cxt']),
+        beforeEmit: new tapable_1.AsyncSeriesHook(["cxt"]),
+        afterEmit: new tapable_1.AsyncSeriesHook(["cxt"]),
     };
-    static CONFIG_PATH = (0, node_path_1.resolve)(__dirname, '../config.js');
-    static MD_EXT = '.md';
-    static HTML_EXT = '.html';
+    static CONFIG_PATH = (0, node_path_1.resolve)(__dirname, "../config.js");
+    static MD_EXT = ".md";
+    static HTML_EXT = ".html";
     constructor() {
         this.#init();
     }
     use(plugin) {
-        if (this.plugins.find(v => v.name === plugin.name)) {
+        if (this.plugins.find((v) => v.name === plugin.name)) {
             return;
         }
         this.plugins.push(plugin);
@@ -69,21 +66,20 @@ class BlogEngine {
     }
     async #watch(type, filePath) {
         const _filePath = (0, node_path_1.resolve)(this.config.entry, filePath);
-        if (type === 'change') {
+        if (type === "change") {
             // 更新文章 filename
             for (let index = 0; index < this.assets.length; index++) {
                 const { path } = this.assets[index];
                 if (_filePath === (0, node_path_1.format)(path)) {
-                    console.log(_filePath);
                     this.assets[index] = await this.#convert2HTMLInfo((0, node_path_1.parse)((0, node_path_1.format)(path)));
                     await this.#emitWatch(this.assets[index]);
                 }
             }
         }
-        if (type === 'rename') {
+        if (type === "rename") {
             if (!(0, node_fs_1.existsSync)(_filePath)) {
                 // 删除
-                const index = this.assets.findIndex(v => (0, node_path_1.format)(v.path) === _filePath);
+                const index = this.assets.findIndex((v) => (0, node_path_1.format)(v.path) === _filePath);
                 if (index > -1) {
                     this.assets.splice(index, 1);
                     await this.#emit();
@@ -98,11 +94,11 @@ class BlogEngine {
         }
     }
     async start() {
-        if (process.env.NODE_ENV === 'preview') {
+        if (process.env.NODE_ENV === "preview") {
             (0, node_fs_1.watch)(this.config.entry, { recursive: true }, this.#watch.bind(this));
         }
         return new Promise(async (resolve) => {
-            console.log('start');
+            console.log("start");
             await this.#readArticlePaths(this.config.entry);
             await this.#convertAllArticles();
             await this.#applyPlugins();
@@ -126,10 +122,8 @@ class BlogEngine {
         }
     }
     async #emitAssets() {
-        console.log(this.assets.length);
         for (const asset of this.assets) {
             await this.#emitFile(asset);
-            this.#count++;
         }
     }
     async #emitFile(asset) {
@@ -154,10 +148,10 @@ class BlogEngine {
         const content = await (0, promises_1.readFile)(`${path.dir}/${path.base}`);
         const html = this.#converter.makeHtml(content.toString());
         const metadata = this.#converter.getMetadata();
-        const arr = path.dir.split('/');
+        const arr = path.dir.split("/");
         const category = arr.pop();
-        if (metadata.topics && typeof metadata.topics === 'string') {
-            metadata.topics = metadata.topics.split(' ');
+        if (metadata.topics && typeof metadata.topics === "string") {
+            metadata.topics = metadata.topics.split(" ");
         }
         return { html, metadata, category, path };
     }
@@ -184,7 +178,7 @@ class BlogEngine {
             encodeEmails: true,
             emoji: true,
             backslashEscapesHTMLTags: true,
-            metadata: true
+            metadata: true,
         };
         this.#converter = new showdown_1.default.Converter(defaultConverterOpts);
     }
@@ -199,7 +193,6 @@ class BlogEngine {
                         await this.#readArticlePaths(ap);
                     }
                     else if (_ap.ext === BlogEngine.MD_EXT) {
-                        this.#articleCount++;
                         this.#articlePaths.push(_ap);
                     }
                 }
@@ -213,25 +206,29 @@ class Plugin {
     apply;
 }
 class LayoutPlugin {
+    opts = {};
+    constructor(opts) {
+        this.opts = opts;
+    }
     name = "LayoutPlugin";
     async apply(cxt) {
         cxt.hooks.beforeEmit.tapPromise(this.name, (cxt) => {
             return new Promise(async (resolveP) => {
-                const { templates: { layout }, output } = cxt.config;
-                const stylesheet = (0, node_path_1.resolve)(output, "/assets/styles", "default.css");
+                const { output } = cxt.config;
+                const stylesheet = this.opts.stylesheet(output);
                 let count = 0;
                 for (const asset of cxt.assets) {
-                    const templateContent = (await (0, promises_1.readFile)(layout)).toString();
+                    const templateContent = (await (0, promises_1.readFile)(this.opts.path)).toString();
                     const template = handlebars_1.default.compile(templateContent);
                     const content = new handlebars_1.default.SafeString(asset.html);
                     asset.html = template({
                         ...asset.metadata,
                         stylesheet,
-                        content
+                        content,
                     });
                     count += 1;
                     if (count === cxt.assets.length) {
-                        console.log('layout done');
+                        console.log("layout done");
                         resolveP();
                     }
                 }
@@ -240,7 +237,7 @@ class LayoutPlugin {
     }
 }
 class MinifyHTMLPlugin {
-    name = 'MinifyHTMLPlugin';
+    name = "MinifyHTMLPlugin";
     async apply(cxt) {
         cxt.hooks.beforeEmit.tapPromise(this.name, (cxt) => {
             return new Promise(async (resolve) => {
@@ -249,7 +246,7 @@ class MinifyHTMLPlugin {
                     asset.html = await (0, html_minifier_terser_1.minify)(asset.html, minifyConfig);
                     count += 1;
                     if (count === cxt.assets.length) {
-                        console.log('minified done');
+                        console.log("minified done");
                         resolve();
                     }
                 }
@@ -262,10 +259,10 @@ class ClearPlugin {
     apply(cxt) {
         cxt.hooks.beforeEmit.tapPromise(this.name, (cxt) => {
             return new Promise(async (resolve) => {
-                if (process.env.NODE_ENV !== 'preview') {
+                if (process.env.NODE_ENV !== "preview") {
                     const execPromise = (0, node_util_1.promisify)(node_child_process_1.exec);
                     await execPromise(`rm -rf ${cxt.config.output}/*`);
-                    console.log('clear done');
+                    console.log("clear done");
                 }
                 resolve();
             });
@@ -273,17 +270,21 @@ class ClearPlugin {
     }
 }
 class HomePagePlugin {
-    name = 'HomePagePlugin';
+    opts = {};
+    constructor(opts) {
+        this.opts = opts;
+    }
+    name = "HomePagePlugin";
     apply(cxt) {
-        cxt.hooks.afterEmit.tapPromise(this.name, (cxt) => {
+        cxt.hooks.beforeEmit.tapPromise(this.name, (cxt) => {
             return new Promise(async (resolveP) => {
                 const { config, assets } = cxt;
-                const { name: title, socialMedias, author, output, templates: { homepage } } = config;
-                const templateContent = (await (0, promises_1.readFile)(homepage)).toString();
+                const { name: title, socialMedias, author, output } = config;
+                const templateContent = (await (0, promises_1.readFile)(this.opts.path)).toString();
                 const template = handlebars_1.default.compile(templateContent);
-                const stylesheet = (0, node_path_1.resolve)(output, "/assets/styles", "default.css");
+                const stylesheet = this.opts.stylesheet(output);
                 const categoryMap = {};
-                assets.forEach(asset => {
+                assets.forEach((asset) => {
                     if (!categoryMap[asset.category]) {
                         categoryMap[asset.category] = [];
                     }
@@ -295,21 +296,34 @@ class HomePagePlugin {
                     author,
                     stylesheet,
                     categoryMap,
-                    copyright: `@Copyright ${(0, dayjs_1.default)().year()} | ${author}`
+                    copyright: `@Copyright ${new Date().getFullYear()} | ${author}`,
                 });
-                const minified = await (0, html_minifier_terser_1.minify)(htmlContent, minifyConfig);
-                await (0, promises_1.writeFile)(`${output}/index.html`, minified);
-                console.log('home done');
+                cxt.assets.push({
+                    html: htmlContent,
+                    path: (0, node_path_1.parse)((0, node_path_1.resolve)(output, "index.html")),
+                    category: "/",
+                });
+                console.log("home done");
                 resolveP();
             });
         });
     }
 }
-engine.use(new LayoutPlugin());
+engine.use(new LayoutPlugin({
+    path: (0, node_path_1.resolve)(__dirname, "../templates/layout.handlebars"),
+    stylesheet: (path) => {
+        return (0, node_path_1.resolve)(path, "/assets/styles/default.css");
+    },
+}));
+engine.use(new HomePagePlugin({
+    path: (0, node_path_1.resolve)(__dirname, "../templates/homepage.handlebars"),
+    stylesheet: (path) => {
+        return (0, node_path_1.resolve)(path, "/assets/styles/default.css");
+    },
+}));
 engine.use(new MinifyHTMLPlugin());
 engine.use(new ClearPlugin());
-engine.use(new HomePagePlugin());
 engine.start().then(async (cxt) => {
     await execPromise(`cp -R ${(0, node_path_1.resolve)(__dirname, "../assets")} ${cxt.config.output}`);
-    console.log('done');
+    console.log("done");
 });
