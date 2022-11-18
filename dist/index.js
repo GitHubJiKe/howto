@@ -67,17 +67,58 @@ class BlogEngine {
     #callPluginHookAfterEmit() {
         return this.hooks.afterEmit.promise(this);
     }
+    async #watch(type, filePath) {
+        const _filePath = (0, node_path_1.resolve)(this.config.entry, filePath);
+        if (type === 'change') {
+            // 更新文章 filename
+            for (let index = 0; index < this.assets.length; index++) {
+                const { path } = this.assets[index];
+                if (_filePath === (0, node_path_1.format)(path)) {
+                    console.log(_filePath);
+                    this.assets[index] = await this.#convert2HTMLInfo((0, node_path_1.parse)((0, node_path_1.format)(path)));
+                    await this.#emitWatch(this.assets[index]);
+                }
+            }
+        }
+        if (type === 'rename') {
+            if (!(0, node_fs_1.existsSync)(_filePath)) {
+                // 删除
+                const index = this.assets.findIndex(v => (0, node_path_1.format)(v.path) === _filePath);
+                if (index > -1) {
+                    this.assets.splice(index, 1);
+                    await this.#emit();
+                }
+            }
+            else {
+                // 新建
+                const asset = await this.#convert2HTMLInfo((0, node_path_1.parse)(_filePath));
+                this.assets.push(asset);
+                await this.#emitWatch(asset);
+            }
+        }
+    }
     async start() {
+        if (process.env.NODE_ENV === 'preview') {
+            (0, node_fs_1.watch)(this.config.entry, { recursive: true }, this.#watch.bind(this));
+        }
         return new Promise(async (resolve) => {
             console.log('start');
             await this.#readArticlePaths(this.config.entry);
             await this.#convertAllArticles();
             await this.#applyPlugins();
-            await this.#callPluginHookBeforeEmit();
-            await this.#emitAssets();
-            await this.#callPluginHookAfterEmit();
+            await this.#emit();
             resolve(this);
         });
+    }
+    async #emit() {
+        await this.#callPluginHookBeforeEmit();
+        await this.#emitAssets();
+        await this.#callPluginHookAfterEmit();
+    }
+    async #emitWatch(asset) {
+        await this.#callPluginHookBeforeEmit();
+        await this.#emitFile(asset);
+        await this.#callPluginHookAfterEmit();
     }
     async #applyPlugins() {
         for (const plugin of this.plugins) {
@@ -85,15 +126,19 @@ class BlogEngine {
         }
     }
     async #emitAssets() {
+        console.log(this.assets.length);
         for (const asset of this.assets) {
-            const { html, path, category } = asset;
-            const blogDir = `${this.config.output}/${category}/`;
-            if (!(0, node_fs_1.existsSync)(blogDir)) {
-                (0, fs_extra_1.ensureDirSync)(blogDir);
-            }
-            await (0, promises_1.writeFile)(`${blogDir}${path.base.replace(BlogEngine.MD_EXT, BlogEngine.HTML_EXT)}`, html);
+            await this.#emitFile(asset);
             this.#count++;
         }
+    }
+    async #emitFile(asset) {
+        const { html, path, category } = asset;
+        const blogDir = `${this.config.output}/${category}/`;
+        if (!(0, node_fs_1.existsSync)(blogDir)) {
+            (0, fs_extra_1.ensureDirSync)(blogDir);
+        }
+        await (0, promises_1.writeFile)(`${blogDir}${path.base.replace(BlogEngine.MD_EXT, BlogEngine.HTML_EXT)}`, html);
     }
     async #init() {
         this.#loadConfig();
@@ -217,9 +262,11 @@ class ClearPlugin {
     apply(cxt) {
         cxt.hooks.beforeEmit.tapPromise(this.name, (cxt) => {
             return new Promise(async (resolve) => {
-                const execPromise = (0, node_util_1.promisify)(node_child_process_1.exec);
-                await execPromise(`rm -rf ${cxt.config.output}/*`);
-                console.log('clear done');
+                if (process.env.NODE_ENV !== 'preview') {
+                    const execPromise = (0, node_util_1.promisify)(node_child_process_1.exec);
+                    await execPromise(`rm -rf ${cxt.config.output}/*`);
+                    console.log('clear done');
+                }
                 resolve();
             });
         });
