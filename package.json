@@ -4,9 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "node ./scripts/index.js",
-    "preview": "export NODE_ENV=preview && node ./scripts/index.js",
-    "publish": "npm run build && cd docs && vercel deploy --prod"
+    "build": "node ./dist/index.js",
+    "preview": "export NODE_ENV=preview && node ./dist/index.js",
+    "publish": "npm run build && cd docs && vercel deploy --prod",
+    "tsc": "tsc"
   },
   "repository": {
     "type": "git",
@@ -24,16 +25,22 @@
     "dayjs": "^1.11.6",
     "ejs": "^3.1.8",
     "fs-extra": "^10.1.0",
+    "handlebars": "^4.7.7",
     "html-minifier": "^4.0.0",
+    "html-minifier-terser": "^7.0.0",
     "jsdom": "^20.0.2",
-    "showdown": "^2.1.0"
+    "showdown": "^2.1.0",
+    "tapable": "^2.2.1"
   },
   "prettier": {
     "tabWidth": 2
   },
   "devDependencies": {
+    "@types/html-minifier-terser": "^7.0.0",
+    "@types/jsdom": "^20.0.1",
     "@types/showdown": "^2.0.0",
     "prettier": "^2.7.1",
+    "typescript": "^5.0.0-dev.20221116",
     "vercel": "^28.4.17"
   }
 }
