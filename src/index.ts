@@ -1,6 +1,6 @@
 import { readFile, readdir, writeFile } from "node:fs/promises"
-import { existsSync, statSync } from "node:fs"
-import { resolve, parse, ParsedPath } from "node:path"
+import { existsSync, statSync, watch } from "node:fs"
+import { resolve, parse, ParsedPath, format } from "node:path"
 import { promisify } from "node:util"
 import { exec } from "node:child_process"
 import { AsyncSeriesHook } from 'tapable';
@@ -109,17 +109,61 @@ class BlogEngine {
         return this.hooks.afterEmit.promise(this)
     }
 
+    async #watch(type: 'change' | 'rename', filePath: string) {
+        const _filePath = resolve(this.config.entry, filePath)
+        if (type === 'change') {
+            // 更新文章 filename
+            for (let index = 0; index < this.assets.length; index++) {
+                const { path } = this.assets[index];
+                if (_filePath === format(path)) {
+                    console.log(_filePath);
+                    this.assets[index] = await this.#convert2HTMLInfo(parse(format(path)))
+                    await this.#emitWatch(this.assets[index])
+                }
+            }
+        }
+
+        if (type === 'rename') {
+            if (!existsSync(_filePath)) {
+                // 删除
+                const index = this.assets.findIndex(v => format(v.path) === _filePath)
+                if (index > -1) {
+                    this.assets.splice(index, 1)
+                    await this.#emit()
+                }
+            } else {
+                // 新建
+                const asset = await this.#convert2HTMLInfo(parse(_filePath))
+                this.assets.push(asset)
+                await this.#emitWatch(asset)
+            }
+        }
+    }
+
     async start(): Promise<BlogEngine> {
+        if (process.env.NODE_ENV === 'preview') {
+            watch(this.config.entry, { recursive: true }, this.#watch.bind(this))
+        }
         return new Promise(async (resolve) => {
             console.log('start');
             await this.#readArticlePaths(this.config.entry);
             await this.#convertAllArticles()
             await this.#applyPlugins()
-            await this.#callPluginHookBeforeEmit()
-            await this.#emitAssets()
-            await this.#callPluginHookAfterEmit()
+            await this.#emit()
             resolve(this)
         });
+    }
+
+    async #emit() {
+        await this.#callPluginHookBeforeEmit()
+        await this.#emitAssets()
+        await this.#callPluginHookAfterEmit()
+    }
+
+    async #emitWatch(asset: AssetInfo) {
+        await this.#callPluginHookBeforeEmit()
+        await this.#emitFile(asset)
+        await this.#callPluginHookAfterEmit()
     }
 
     async #applyPlugins() {
@@ -129,15 +173,20 @@ class BlogEngine {
     }
 
     async #emitAssets() {
+        console.log(this.assets.length);
         for (const asset of this.assets) {
-            const { html, path, category } = asset
-            const blogDir = `${this.config.output}/${category}/`
-            if (!existsSync(blogDir)) {
-                ensureDirSync(blogDir)
-            }
-            await writeFile(`${blogDir}${path.base.replace(BlogEngine.MD_EXT, BlogEngine.HTML_EXT)}`, html)
+            await this.#emitFile(asset)
             this.#count++;
         }
+    }
+
+    async #emitFile(asset: AssetInfo) {
+        const { html, path, category } = asset
+        const blogDir = `${this.config.output}/${category}/`
+        if (!existsSync(blogDir)) {
+            ensureDirSync(blogDir)
+        }
+        await writeFile(`${blogDir}${path.base.replace(BlogEngine.MD_EXT, BlogEngine.HTML_EXT)}`, html)
     }
 
     async #init() {
@@ -284,9 +333,11 @@ class ClearPlugin implements Plugin {
     apply(cxt: BlogEngine) {
         cxt.hooks.beforeEmit.tapPromise(this.name, (cxt) => {
             return new Promise(async (resolve) => {
-                const execPromise = promisify(exec)
-                await execPromise(`rm -rf ${cxt.config.output}/*`)
-                console.log('clear done');
+                if (process.env.NODE_ENV !== 'preview') {
+                    const execPromise = promisify(exec)
+                    await execPromise(`rm -rf ${cxt.config.output}/*`)
+                    console.log('clear done');
+                }
                 resolve()
             });
         })
@@ -339,7 +390,6 @@ engine.use(new LayoutPlugin())
 engine.use(new MinifyHTMLPlugin())
 engine.use(new ClearPlugin())
 engine.use(new HomePagePlugin())
-
 engine.start().then(async (cxt) => {
     await execPromise(`cp -R ${resolve(__dirname, "../assets")} ${cxt.config.output}`);
     console.log('done');
