@@ -1,64 +1,69 @@
-<!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://highlightjs.org/static/demo/styles/agate.css"
+    />
+    <link rel="stylesheet" href="{{stylesheet}}" />
+    <link rel="icon" type="image/png" href="/assets/favicon.ico" />
+    <script src="https://highlightjs.org/static/highlight.min.js"></script>
+    <title>{{title}}</title>
+    <style>
+      h1::after { content: attr(data-time); font-size: 0.4em; color: #395260;
+      display: block; margin-top: 8px; font-weight: normal; } footer { display:
+      flex; justify-content: space-between; padding: 12px; } .site-link-h {
+      text-align: center; margin-bottom: 0; font-size: 2em; padding-top: 12px; }
+      .topic-tag { display: flex; align-items: center; background-color: #fff;
+      border: 1px solid #395260; border-radius: 10px; padding: 4px 8px;
+      font-size: .5em; cursor: pointer; line-height: normal; }
+    </style>
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="https://highlightjs.org/static/demo/styles/agate.css" />
-  <link rel="stylesheet" href="{{stylesheet}}" />
-  <link rel="icon" type="image/png" href="/assets/favicon.ico" />
-  <script src="https://highlightjs.org/static/highlight.min.js"></script>
-  <title>{{title}}</title>
-  <style>
-    h1::after {
-      content: attr(data-time);
-      font-size: 0.4em;
-      color: #395260;
-      display: block;
-      margin-top: 8px;
-      font-weight: normal;
-    }
-
-    footer {
-      display: flex;
-      justify-content: space-between;
-      padding: 12px;
-    }
-
-    .site-link-h {
-      text-align: left;
-      margin-bottom: 0;
-      font-size: 2em;
-      padding-left: 12px;
-      padding-top: 12px;
-    }
-  </style>
-</head>
-
-<body>
-  <header style="margin: 0; width: 100%">
-    <h1 class="site-link-h">
-      <a href="/" style="color: #c91f37"> {{topic}}</a>
-    </h1>
-  </header>
-  <main>
-    <section>{{content}}</section>
-    <footer>
-      <div>
-        <a href="{{prev}}">上一篇</a>
+  <body>
+    <header style="margin: 0; width: 100%">
+      <h1 class="site-link-h">
+        <a href="/" style="color: #c91f37"> {{title}}</a>
+      </h1>
+      <p style="font-size: .4em;color:#395260;text-align:center;">
+        {{#if updateDate}}
+          <span>
+            更新时间：{{updateDate}}
+          </span>
+        {{/if}}
+        {{#if createDate}}
+          <span>
+            创建时间：{{createDate}}
+          </span>
+        {{/if}}
+      </p>
+    </header>
+    <main>
+      <div style="margin: 12px;display:flex;gap:8px;">
+        {{#each topics}}
+          <div class="topic-tag">{{this}}</div>
+        {{/each}}
       </div>
-      <div>
-        <a href=" {{next}}">下一篇</a>
-      </div>
-    </footer>
-  </main>
+      <section>{{content}}</section>
+      <footer>
+        <div>
+          {{#if prev}}
+            <a href="{{prev}}">上一篇</a>
+          {{/if}}
+        </div>
+        <div>
+          {{#if next}}
+            <a href=" {{next}}">下一篇</a>
+          {{/if}}
+        </div>
+      </footer>
+    </main>
 
-  <script>
-    if (hljs) {
-      hljs.highlightAll();
-    }
-  </script>
-</body>
+    <script>
+      if (hljs) { hljs.highlightAll(); }
+    </script>
+  </body>
 
 </html>

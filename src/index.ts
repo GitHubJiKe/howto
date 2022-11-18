@@ -1,44 +1,88 @@
 import { readFile, readdir, writeFile } from "node:fs/promises"
 import { existsSync, statSync } from "node:fs"
 import { resolve, parse, ParsedPath } from "node:path"
-import { execSync } from "node:child_process"
-import Tapable, { SyncHook } from 'tapable';
+import { promisify } from "node:util"
+import { exec } from "node:child_process"
+import { AsyncSeriesHook } from 'tapable';
 import showdown from 'showdown';
-import { JSDOM } from 'jsdom';
+// import { JSDOM } from 'jsdom';
 import { minify, Options } from 'html-minifier-terser'
 import handlebars from 'handlebars'
+import { ensureDirSync } from "fs-extra"
+import dayjs from 'dayjs'
 
 
+const execPromise = promisify(exec)
 
+
+const minifyConfig: Options = {
+    removeAttributeQuotes: true,
+    removeComments: true,
+    removeEmptyAttributes: true,
+    removeOptionalTags: true,
+    removeScriptTypeAttributes: true,
+    removeStyleLinkTypeAttributes: true,
+    removeTagWhitespace: true,
+    removeRedundantAttributes: true,
+    sortAttributes: true,
+    sortClassName: true,
+    trimCustomFragments: true,
+    useShortDoctype: true,
+    html5: true,
+    minifyCSS: true,
+    minifyJS: true,
+    collapseWhitespace: true,
+    collapseBooleanAttributes: true,
+    decodeEntities: true,
+    processScripts: ['text/html'],
+}
 
 interface BlogConfig {
     entry: string;
     output: string;
-    showdownConfig?: showdown.ConverterOptions;
+    name: string;
+    author: string;
+    socialMedias: Array<{ key: string; value: string }>;
     templates: {
         homepage: string;
         layout: string;
     }
 }
 
+interface MyMetaData {
+    title: string;
+    createDate: string;
+    updateDate?: string;
+    topics?: string | string[];
+    prev?: string;
+    next?: string;
+}
+
 interface AssetInfo {
     html: string;
-    metadata: showdown.Metadata;
+    metadata: MyMetaData;
     category: string;
     path: ParsedPath;
 }
 
 
+interface MyHooks {
+    beforeEmit: AsyncSeriesHook<BlogEngine>;
+    afterEmit: AsyncSeriesHook<BlogEngine>;
+}
 
 class BlogEngine {
     config: BlogConfig = {} as BlogConfig;
     #converter: showdown.Converter = null as unknown as showdown.Converter;
     #articlePaths: ParsedPath[] = [];
     #articleCount: number = 0;
-    #allFilesCountInEntry: number = 0;
+    #count: number = 0;
     assets: AssetInfo[] = [];
     plugins: Plugin[] = []
-
+    hooks: MyHooks = {
+        beforeEmit: new AsyncSeriesHook(['cxt']),
+        afterEmit: new AsyncSeriesHook(['cxt']),
+    };
     static CONFIG_PATH = resolve(__dirname, '../config.js')
     static MD_EXT = '.md'
     static HTML_EXT = '.html'
@@ -46,6 +90,7 @@ class BlogEngine {
     constructor() {
         this.#init()
     }
+
 
     use(plugin: Plugin) {
         if (this.plugins.find(v => v.name === plugin.name)) {
@@ -55,17 +100,29 @@ class BlogEngine {
         this.plugins.push(plugin)
     }
 
-    async start(): Promise<string> {
+    #callPluginHookBeforeEmit() {
+        return this.hooks.beforeEmit.promise(this)
+
+    }
+
+    #callPluginHookAfterEmit() {
+        return this.hooks.afterEmit.promise(this)
+    }
+
+    async start(): Promise<BlogEngine> {
         return new Promise(async (resolve) => {
+            console.log('start');
             await this.#readArticlePaths(this.config.entry);
             await this.#convertAllArticles()
-            await this.#beforeEmitAssets()
+            await this.#applyPlugins()
+            await this.#callPluginHookBeforeEmit()
             await this.#emitAssets()
-            resolve('done')
+            await this.#callPluginHookAfterEmit()
+            resolve(this)
         });
     }
 
-    async #beforeEmitAssets() {
+    async #applyPlugins() {
         for (const plugin of this.plugins) {
             await plugin.apply(this)
         }
@@ -74,14 +131,18 @@ class BlogEngine {
     async #emitAssets() {
         for (const asset of this.assets) {
             const { html, path, category } = asset
-            await writeFile(`${this.config.output}/${category}/${path.base.replace(BlogEngine.MD_EXT, BlogEngine.HTML_EXT)}`, html)
+            const blogDir = `${this.config.output}/${category}/`
+            if (!existsSync(blogDir)) {
+                ensureDirSync(blogDir)
+            }
+            await writeFile(`${blogDir}${path.base.replace(BlogEngine.MD_EXT, BlogEngine.HTML_EXT)}`, html)
+            this.#count++;
         }
     }
 
     async #init() {
         this.#loadConfig();
         this.#initConverter();
-        this.#allFilesCountInEntry = Number(execSync(`cd ${this.config.entry} && ls -lR|grep "^-"|wc -l`).toString())
     }
 
     async #convertAllArticles() {
@@ -95,9 +156,12 @@ class BlogEngine {
     async #convert2HTMLInfo(path: ParsedPath) {
         const content = await readFile(`${path.dir}/${path.base}`);
         const html = this.#converter.makeHtml(content.toString());
-        const metadata = this.#converter.getMetadata();
+        const metadata = (this.#converter.getMetadata() as unknown as MyMetaData);
         const arr = path.dir.split('/')
         const category = arr.pop() as string;
+        if (metadata.topics && typeof metadata.topics === 'string') {
+            metadata.topics = metadata.topics.split(' ')
+        }
         return { html, metadata, category, path } as AssetInfo;
     }
 
@@ -125,8 +189,9 @@ class BlogEngine {
             encodeEmails: true,
             emoji: true,
             backslashEscapesHTMLTags: true,
+            metadata: true
         }
-        this.#converter = new showdown.Converter(this.config?.showdownConfig || defaultConverterOpts)
+        this.#converter = new showdown.Converter(defaultConverterOpts)
     }
 
     async #readArticlePaths(entry: string) {
@@ -155,48 +220,40 @@ const engine = new BlogEngine()
 
 abstract class Plugin {
     name: string | undefined;
-    apply!: ((cxt: BlogEngine) => Promise<BlogEngine> | BlogEngine);
-}
-
-class JSDOMPlugin implements Plugin {
-    name = 'JSDOMPlugin'
-
-    apply(cxt: BlogEngine) {
-        console.log(cxt.assets);
-        // const root = new JSDOM(html);
-        // const header = root.window._document.querySelector("h1");
-        // header.setAttribute(
-        //     "data-time",
-        //     "更新时间：<%= updateDate %> | 创建时间： <%= createDate %>"
-        // );
-
-        // return root.serialize();
-
-        return cxt
-    }
+    apply!: (cxt: BlogEngine) => unknown;
 }
 
 class LayoutPlugin implements Plugin {
     name = "LayoutPlugin"
 
     async apply(cxt: BlogEngine) {
-        const { templates: { layout }, output } = cxt.config;
-        const stylesheet = resolve(
-            output,
-            "/assets/styles",
-            "default.css"
-        );
-        for (const asset of cxt.assets) {
-            const templateContent = (await readFile(layout)).toString()
-            const template = handlebars.compile(templateContent)
-            const content = new handlebars.SafeString(asset.html)
-            asset.html = template({
-                ...asset.metadata,
-                stylesheet,
-                content
-            })
-        }
-        return cxt
+        cxt.hooks.beforeEmit.tapPromise(this.name, (cxt) => {
+            return new Promise(async (resolveP,) => {
+                const { templates: { layout }, output } = cxt.config;
+                const stylesheet = resolve(
+                    output,
+                    "/assets/styles",
+                    "default.css"
+                );
+                let count = 0
+                for (const asset of cxt.assets) {
+                    const templateContent = (await readFile(layout)).toString()
+                    const template = handlebars.compile(templateContent)
+                    const content = new handlebars.SafeString(asset.html)
+                    asset.html = template({
+                        ...asset.metadata,
+                        stylesheet,
+                        content
+                    })
+                    count += 1
+                    if (count === cxt.assets.length) {
+                        console.log('layout done');
+                        resolveP()
+                    }
+                }
+            });
+        })
+
     }
 }
 
@@ -204,40 +261,86 @@ class MinifyHTMLPlugin implements Plugin {
     name = 'MinifyHTMLPlugin'
 
     async apply(cxt: BlogEngine) {
-        for (const asset of cxt.assets) {
-            const minifyConfig: Options = {
-                removeAttributeQuotes: true,
-                removeComments: true,
-                removeEmptyAttributes: true,
-                removeOptionalTags: true,
-                removeScriptTypeAttributes: true,
-                removeStyleLinkTypeAttributes: true,
-                removeTagWhitespace: true,
-                removeRedundantAttributes: true,
-                sortAttributes: true,
-                sortClassName: true,
-                trimCustomFragments: true,
-                useShortDoctype: true,
-                html5: true,
-                minifyCSS: true,
-                minifyJS: true,
-                collapseWhitespace: true,
-                collapseBooleanAttributes: true,
-                decodeEntities: true,
-                processScripts: ['text/html'],
-            }
-            asset.html = await minify(asset.html, minifyConfig)
-        }
-        return cxt
+        cxt.hooks.beforeEmit.tapPromise(this.name, (cxt) => {
+            return new Promise(async (resolve) => {
+                let count = 0
+                for (const asset of cxt.assets) {
+
+                    asset.html = await minify(asset.html, minifyConfig)
+                    count += 1
+                    if (count === cxt.assets.length) {
+                        console.log('minified done');
+                        resolve()
+                    }
+                }
+            });
+        })
+    }
+}
+
+class ClearPlugin implements Plugin {
+    name = "ClearPlugin"
+
+    apply(cxt: BlogEngine) {
+        cxt.hooks.beforeEmit.tapPromise(this.name, (cxt) => {
+            return new Promise(async (resolve) => {
+                const execPromise = promisify(exec)
+                await execPromise(`rm -rf ${cxt.config.output}/*`)
+                console.log('clear done');
+                resolve()
+            });
+        })
+    }
+
+}
+
+class HomePagePlugin implements Plugin {
+    name = 'HomePagePlugin'
+    apply(cxt: BlogEngine) {
+        cxt.hooks.afterEmit.tapPromise(this.name, (cxt) => {
+            return new Promise(async (resolveP) => {
+                const { config, assets } = cxt;
+                const { name: title, socialMedias, author, output, templates: { homepage } } = config;
+                const templateContent = (await readFile(homepage)).toString()
+                const template = handlebars.compile(templateContent)
+                const stylesheet = resolve(
+                    output,
+                    "/assets/styles",
+                    "default.css"
+                );
+
+                const categoryMap = {} as { [key: string]: string[] }
+
+                assets.forEach(asset => {
+                    if (!categoryMap[asset.category]) {
+                        categoryMap[asset.category] = []
+                    }
+                    categoryMap[asset.category].push(asset.path.name)
+                })
+                const htmlContent = template({
+                    title,
+                    socialMedias,
+                    author,
+                    stylesheet,
+                    categoryMap,
+                    copyright: `@Copyright ${dayjs().year()} | ${author}`
+                })
+                const minified = await minify(htmlContent, minifyConfig)
+                await writeFile(`${output}/index.html`, minified);
+                console.log('home done');
+                resolveP()
+            });
+        })
     }
 }
 
 
 engine.use(new LayoutPlugin())
 engine.use(new MinifyHTMLPlugin())
+engine.use(new ClearPlugin())
+engine.use(new HomePagePlugin())
 
-engine.start().then((res) => {
-    console.log(res);
+engine.start().then(async (cxt) => {
+    await execPromise(`cp -R ${resolve(__dirname, "../assets")} ${cxt.config.output}`);
+    console.log('done');
 })
-
-export default engine

@@ -1,0 +1,72 @@
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{{stylesheet}}" />
+    <link rel="icon" type="image/png" href="/assets/favicon.ico" />
+    <style>
+      html, body { overflow: hidden; } summary>* { display: inline; } summary {
+      margin-bottom: 12px; cursor: pointer; user-select: none; } details {
+      margin: 12px 0; } main { display: flex; margin: 0; max-width: 100vw; }
+      main>.left { flex: 5; display: flex; justify-content: center; align-items:
+      center; flex-direction: column; } .left>.author { font-size: 0.8em; color:
+      #395260; display: block; margin-top: 8px; font-weight: normal; margin-top:
+      12px; } main>.right { flex: 7; overflow: auto; } footer { text-align:
+      center; width: 100%; position: absolute; bottom: 0; margin: 20px 0; }
+      #home-h1 { text-align: left; margin-bottom: 0; font-size: 2em; padding:
+      12px; color: white; }
+    </style>
+    <title>{{title}}</title>
+  </head>
+
+  <body>
+    <header style="margin: 0; width: 100%">
+      <h1 id="home-h1">
+        <a href="/" style="color: #c91f37">{{title}}</a>
+      </h1>
+    </header>
+    <main id="home-main">
+      <section class="left">
+        <img
+          style="border-radius: 50%"
+          src="https://avatars.githubusercontent.com/u/15058227?v=4"
+          alt="avatar"
+          width="200"
+          height="200"
+        />
+        <span class="author">
+          {{author}}
+        </span>
+        <div style="margin-top: 24px">
+          {{#each socialMedias}}
+            {{#if @index}}
+              |
+            {{/if}}
+            <a href="this.value">{{this.key}}</a>
+          {{/each}}
+        </div>
+      </section>
+      <section class="right">
+        {{#each categoryMap as |_key _val|}}
+          <details open>
+            <summary>
+              <h4>{{@key}}</h4>
+            </summary>
+            <ul>
+              {{#each this}}
+                <li>
+                  <a target="_blank" href="{{_val}}/{{this}}.html">
+                    {{this}}
+                  </a>
+                </li>
+              {{/each}}
+            </ul>
+          </details>
+        {{/each}}
+      </section>
+    </main>
+    <footer>{{copyright}}</footer>
+  </body>
+</html>
