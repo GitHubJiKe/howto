@@ -10,6 +10,7 @@ const node_util_1 = require("node:util");
 const node_child_process_1 = require("node:child_process");
 const tapable_1 = require("tapable");
 const showdown_1 = __importDefault(require("showdown"));
+// import { JSDOM } from 'jsdom';
 const html_minifier_terser_1 = require("html-minifier-terser");
 const handlebars_1 = __importDefault(require("handlebars"));
 const fs_extra_1 = require("fs-extra");
@@ -75,7 +76,6 @@ class BlogEngine {
             await this.#callPluginHookBeforeEmit();
             await this.#emitAssets();
             await this.#callPluginHookAfterEmit();
-            console.log(11111);
             resolve(this);
         });
     }
@@ -263,8 +263,6 @@ engine.use(new MinifyHTMLPlugin());
 engine.use(new ClearPlugin());
 engine.use(new HomePagePlugin());
 engine.start().then(async (cxt) => {
-    console.log(222222);
     await execPromise(`cp -R ${(0, node_path_1.resolve)(__dirname, "../assets")} ${cxt.config.output}`);
     console.log('done');
 });
-exports.default = engine;

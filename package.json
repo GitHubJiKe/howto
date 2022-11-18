@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "node ./scripts/index.js",
-    "preview": "export NODE_ENV=preview && node ./scripts/index.js",
+    "build": "node ./dist/index.js",
+    "preview": "export NODE_ENV=preview && node ./dist/index.js",
     "publish": "npm run build && cd docs && vercel deploy --prod",
     "tsc": "tsc"
   },
