@@ -122,9 +122,11 @@ class BlogEngine {
         }
     }
     async #emitAssets() {
+        console.time("emit");
         for (const asset of this.assets) {
             await this.#emitFile(asset);
         }
+        console.timeEnd("emit");
     }
     async #emitFile(asset) {
         const { html, path, category } = asset;
